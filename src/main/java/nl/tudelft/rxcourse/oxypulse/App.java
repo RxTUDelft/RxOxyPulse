@@ -4,7 +4,6 @@ import java.util.BitSet;
 
 import jssc.SerialPort;
 import jssc.SerialPortException;
-import jssc.SerialPortList;
 
 /**
  * Simple program to test reading values from the device. 
@@ -68,8 +67,8 @@ public class App {
 					long SpO2Value = getLongValueFrom(SpO2);
 
 					System.out.println(String.format(""
-							+ "Signal strength: %d " + "WaveForm Data: %d "
-							+ "BarValue: %d " + "Pulse: %d " + "SPO2: %d",
+							+ "Signal strength: %d WaveForm Data: %d "
+							+ "BarValue: %d Pulse: %d SPO2: %d",
 							signalStrength, tick, barValue, pulseValue,
 							SpO2Value));
 				}
