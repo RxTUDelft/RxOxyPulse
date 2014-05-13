@@ -46,7 +46,7 @@ Communication Protocol
 	|byte#	|bit	|content				|
 	|:-----:|:-----:|---------------------------------------|
 	|4	|0 ~ 6	|bit 0 ~ 6 for Pulse Rate		|
-	|	|	|*bit 7 of Pulse Rate is in byte #3 *	|
+	|	|	|*bit 7 of Pulse Rate is in byte #3*	|
 	|	|7	|Synchronization, always be 0		|
 
 	|byte#	|bit	|content				|
