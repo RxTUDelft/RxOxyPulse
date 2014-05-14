@@ -19,6 +19,12 @@
 			<artifactId>jssc</artifactId>
 			<version>2.8.0</version>
 		</dependency>
+		<!-- https://github.com/Netflix/RxJava -->
+		<dependency>
+			<groupId>com.netflix.rxjava</groupId>
+			<artifactId>rxjava-core</artifactId>
+			<version>0.18.3</version>
+		</dependency>
 		<dependency>
 			<groupId>junit</groupId>
 			<artifactId>junit</artifactId>
@@ -39,5 +45,5 @@
 			</plugin>
 		</plugins>
 	</build>
-	
+
 </project>
