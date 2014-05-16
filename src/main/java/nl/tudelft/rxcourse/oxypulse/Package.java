@@ -9,11 +9,11 @@ public class Package {
 
 	private final SerialPort serialPort;
 
-	private boolean SEARCHING;
-	private boolean SEARCHING_TOO_LONG;
-	private boolean DROPPING_OFF_SPO2;
-	private boolean BEEP_FLAG;
-	private boolean PROBE_ERROR;
+	private boolean isSearching;
+	private boolean isSearchingTooLong;
+	private boolean isDroppingOffOxygen;
+	private boolean hasBeepFlag;
+	private boolean hasProbeError;
 
 	private long signalStrength;
 	private long pulseWaveform;
@@ -56,8 +56,8 @@ public class Package {
 		BitSet barGraph = readNextByteFrom(serialPort);
 		pulseBar = getLongValueFrom(barGraph, 0, 3);
 
-		PROBE_ERROR = barGraph.get(4);
-		SEARCHING = barGraph.get(5);
+		hasProbeError = barGraph.get(4);
+		isSearching = barGraph.get(5);
 
 		boolean pulseWaveBit7 = barGraph.get(6);
 		return pulseWaveBit7;
@@ -73,9 +73,9 @@ public class Package {
 		// byte #1
 		BitSet signal = readNextByteFrom(serialPort);
 		signalStrength = getLongValueFrom(signal, 0, 3);
-		SEARCHING_TOO_LONG = signal.get(4);
-		DROPPING_OFF_SPO2 = signal.get(5);
-		BEEP_FLAG = signal.get(6);
+		isSearchingTooLong = signal.get(4);
+		isDroppingOffOxygen = signal.get(5);
+		hasBeepFlag = signal.get(6);
 	}
 
 	private long getLongValueFrom(BitSet bits, int from, int to) {
