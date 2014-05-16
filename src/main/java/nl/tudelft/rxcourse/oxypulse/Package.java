@@ -19,16 +19,20 @@ public class Package {
 	private long pulseBar;
 	private long oxygen;
 
-	public Package(SerialPort serialPort) throws SerialPortException {
-		processByteOne(serialPort);
+	public Package(SerialPort serialPort) {
+		try {
+			processByteOne(serialPort);
 
-		processByteTwo(serialPort);
+			processByteTwo(serialPort);
 
-		boolean pulseWaveBit7 = processByteThree(serialPort);
+			boolean pulseWaveBit7 = processByteThree(serialPort);
 
-		processByteFour(serialPort, pulseWaveBit7);
+			processByteFour(serialPort, pulseWaveBit7);
 
-		processByteFive(serialPort);
+			processByteFive(serialPort);
+		} catch (SerialPortException e) {
+			System.err.println(e);
+		}
 	}
 
 	private void processByteFive(SerialPort serialPort)
