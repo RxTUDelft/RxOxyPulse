@@ -1,7 +1,6 @@
 package nl.tudelft.rxcourse.oxypulse;
 
 import rx.Observable;
-import rx.functions.Action1;
 
 public class Hello {
 	
@@ -10,13 +9,8 @@ public class Hello {
 	}
 	
     public static void hello(String... names) {
-        Observable.from(names).subscribe(new Action1<String>() {
-
-            @Override
-            public void call(String s) {
-                System.out.println("Hello " + s + "!");
-            }
-
-        });
+        Observable.from(names).subscribe(
+        	(String name) -> System.out.println("Hello " + name + "!")
+        );
     }
 }
