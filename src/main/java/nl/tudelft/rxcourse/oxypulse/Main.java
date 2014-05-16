@@ -6,6 +6,8 @@ import jssc.SerialPort;
 import jssc.SerialPortEvent;
 import jssc.SerialPortEventListener;
 import jssc.SerialPortException;
+import rx.Observable;
+import rx.Subscriber;
 
 public class Main {
 
@@ -33,9 +35,24 @@ public class Main {
 			// Add an interface through which we will receive information about
 			// events
 			serialPort.addEventListener(new SerialPortReader());
+
 		} catch (SerialPortException ex) {
 			System.out.println(ex);
 		}
+	}
+	
+	public static Observable<SerialPortEvent> fromSerialPort(SerialPort port) {
+		return Observable.create(
+			(Subscriber<? super SerialPortEvent> subscriber) -> {
+				try {
+					port.addEventListener(
+						serialPortEvent -> subscriber.onNext(serialPortEvent)
+					);
+				} catch (SerialPortException e) {
+					subscriber.onError(e);
+				}
+			}
+		);
 	}
 
 	static class SerialPortReader implements SerialPortEventListener {
