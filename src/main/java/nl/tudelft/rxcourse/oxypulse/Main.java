@@ -1,10 +1,7 @@
 package nl.tudelft.rxcourse.oxypulse;
 
-import java.util.BitSet;
-
 import jssc.SerialPort;
 import jssc.SerialPortEvent;
-import jssc.SerialPortEventListener;
 import jssc.SerialPortException;
 import rx.Observable;
 import rx.Subscriber;
@@ -14,30 +11,41 @@ public class Main {
 	public static SerialPort serialPort;
 	public static String PORT = "/dev/tty.SLAB_USBtoUART";
 
-	public static boolean SEARCHING;
-	public static boolean SEARCHING_TOO_LONG;
-	public static boolean DROPPING_OFF_SPO2;
-	public static boolean BEEP_FLAG;
-	public static boolean PROBE_ERROR;
-
 	public static void main(String[] args) {
 		try {
 			serialPort = openSerialPort(PORT);
 
-			Observable<SerialPortEvent> observer = fromSerialPort(serialPort);
-
+			//eventsFrom(serialPort).buffer(5, 5).doOnEach(System.out::println).subscribe();
+			
+			eventsFrom(serialPort)	.buffer(5, 5)
+									.map(event -> { 
+										try {
+											return new Package(serialPort); 
+										} catch (SerialPortException e) {
+											return null;
+										}
+									})
+									.doOnEach(System.out::println)
+									.subscribe();
+			
 		} catch (SerialPortException ex) {
 			System.out.println(ex);
 		}
 	}
 	
-	public static Observable<SerialPortEvent> fromSerialPort(SerialPort port) {
+	/**
+	 * An Observable for SerialPortEvents. 
+	 * 
+	 * An onNext is called every time an event is fired.
+	 * 
+	 * @param port
+	 * @return
+	 */
+	public static Observable<SerialPortEvent> eventsFrom(SerialPort port) {
 		return Observable.create(
 			(Subscriber<? super SerialPortEvent> subscriber) -> {
 				try {
-					port.addEventListener(
-						serialPortEvent -> subscriber.onNext(serialPortEvent)
-					);
+					port.addEventListener(serialPortEvent -> subscriber.onNext(serialPortEvent));
 				} catch (SerialPortException e) {
 					subscriber.onError(e);
 				}
@@ -45,95 +53,38 @@ public class Main {
 		);
 	}
 
-	static class SerialPortReader implements SerialPortEventListener {
-
-		public void serialEvent(SerialPortEvent event) {
-			try {
-				// if this is a receive event
-				if (event.isRXCHAR()) {
-					int eventValue = event.getEventValue();
-					// if the buffer has 5 bytes
-					if (eventValue == 5) {
-						// byte #1
-						BitSet signal = readNextByteFrom(serialPort);
-						long signalStrength = getLongValueFrom(signal, 0, 3);
-						SEARCHING_TOO_LONG = signal.get(4);
-						DROPPING_OFF_SPO2 = signal.get(5);
-						BEEP_FLAG = signal.get(6);
-
-						// byte #2
-						BitSet waveformData = readNextByteFrom(serialPort).get(
-								0, 6);
-						long tick = getLongValueFrom(waveformData);
-
-						// byte #3
-						BitSet barGraph = readNextByteFrom(serialPort);
-						long barValue = getLongValueFrom(barGraph, 0, 3);
-
-						PROBE_ERROR = barGraph.get(4);
-						SEARCHING = barGraph.get(5);
-
-						boolean pulseWaveBit7 = barGraph.get(6);
-
-						// byte #4
-						BitSet pulseRate = readNextByteFrom(serialPort);
-						pulseRate.set(7, pulseWaveBit7);
-						long pulseValue = getLongValueFrom(pulseRate);
-
-						// byte #5
-						BitSet SpO2 = readNextByteFrom(serialPort);
-						long SpO2Value = getLongValueFrom(SpO2);
-
-						System.out.println(String.format(""
-								+ "Signal strength: %d WaveForm Data: %d "
-								+ "BarValue: %d Pulse: %d SPO2: %d",
-								signalStrength, tick, barValue, pulseValue,
-								SpO2Value));
-
-					} else {
-						// if the buffer has more than 5 bytes
-						if (eventValue > 5) {
-							// clear the buffer
-							serialPort.readBytes(eventValue);
-							System.err
-									.println(String.format(
-											"Clearing buffer of %d bytes.",
-											eventValue));
-						}
-					}
+	/**
+	 * An Observable
+	 * @param port
+	 * @param numBytes
+	 * @return
+	 */
+	public static Observable<byte[]> bytesFrom(SerialPort port, int numBytes) {
+		return Observable.create(
+			(Subscriber<? super byte[]> subscriber) -> {
+				try {
+					port.readBytes(); // clear the buffer
+					subscriber.onNext(port.readBytes(numBytes));
+				} catch (SerialPortException e) {
+					subscriber.onError(e);
 				}
-			} catch (SerialPortException ex) {
-				System.err.println(ex);
 			}
-		}
-	}
-
-	private static long getLongValueFrom(BitSet bits, int from, int to) {
-		long[] values = bits.get(from, to).toLongArray();
-		return values.length > 0 ? values[0] : 0;
-	}
-
-	private static long getLongValueFrom(BitSet bits) {
-		return getLongValueFrom(bits, 0, bits.length());
-	}
-
-	private static BitSet readNextByteFrom(SerialPort serialPort)
-			throws SerialPortException {
-
-		return BitSet.valueOf(serialPort.readBytes(1));
+		); 
 	}
 	
-	private static SerialPort openSerialPort(String port) throws SerialPortException {
-		SerialPort serialPort = new SerialPort(port);		
-		serialPort.openPort();		
-		serialPort.setParams(SerialPort.BAUDRATE_19200,
-				SerialPort.DATABITS_8, SerialPort.STOPBITS_1,
-				SerialPort.PARITY_ODD);
+	private static SerialPort openSerialPort(String port)
+			throws SerialPortException {
+		SerialPort serialPort = new SerialPort(port);
+		serialPort.openPort();
+		serialPort.setParams(SerialPort.BAUDRATE_19200, SerialPort.DATABITS_8,
+				SerialPort.STOPBITS_1, SerialPort.PARITY_ODD);
 		// Specify the types of events that we want to track.
-		int mask = SerialPort.MASK_RXCHAR;
+		int mask = SerialPort.MASK_RXCHAR + SerialPort.MASK_CTS
+				+ SerialPort.MASK_DSR + SerialPort.MASK_ERR;
 		// Set the prepared mask
 		serialPort.setEventsMask(mask);
-		
+		// Clear buffer
+		serialPort.readBytes();
 		return serialPort;
 	}
 }
