@@ -21,20 +21,10 @@ public class Main {
 	public static boolean PROBE_ERROR;
 
 	public static void main(String[] args) {
-		serialPort = new SerialPort(PORT);
 		try {
-			serialPort.openPort();
-			serialPort.setParams(SerialPort.BAUDRATE_19200,
-					SerialPort.DATABITS_8, SerialPort.STOPBITS_1,
-					SerialPort.PARITY_ODD);
+			serialPort = openSerialPort(PORT);
 
-			// Specify the types of events that we want to track.
-			int mask = SerialPort.MASK_RXCHAR;
-			// Set the prepared mask
-			serialPort.setEventsMask(mask);
-			// Add an interface through which we will receive information about
-			// events
-			serialPort.addEventListener(new SerialPortReader());
+			Observable<SerialPortEvent> observer = fromSerialPort(serialPort);
 
 		} catch (SerialPortException ex) {
 			System.out.println(ex);
@@ -131,5 +121,19 @@ public class Main {
 			throws SerialPortException {
 
 		return BitSet.valueOf(serialPort.readBytes(1));
+	}
+	
+	private static SerialPort openSerialPort(String port) throws SerialPortException {
+		SerialPort serialPort = new SerialPort(port);		
+		serialPort.openPort();		
+		serialPort.setParams(SerialPort.BAUDRATE_19200,
+				SerialPort.DATABITS_8, SerialPort.STOPBITS_1,
+				SerialPort.PARITY_ODD);
+		// Specify the types of events that we want to track.
+		int mask = SerialPort.MASK_RXCHAR;
+		// Set the prepared mask
+		serialPort.setEventsMask(mask);
+		
+		return serialPort;
 	}
 }
