@@ -7,6 +7,8 @@ import jssc.SerialPortException;
 
 public class Package {
 
+	private final SerialPort serialPort;
+
 	private boolean SEARCHING;
 	private boolean SEARCHING_TOO_LONG;
 	private boolean DROPPING_OFF_SPO2;
@@ -20,29 +22,28 @@ public class Package {
 	private long oxygen;
 
 	public Package(SerialPort serialPort) {
+		this.serialPort = serialPort;
 		try {
-			processByteOne(serialPort);
+			processByteOne();
 
-			processByteTwo(serialPort);
+			processByteTwo();
 
-			boolean pulseWaveBit7 = processByteThree(serialPort);
+			processByteFour(processByteThree());
 
-			processByteFour(serialPort, pulseWaveBit7);
+			processByteFive();
 
-			processByteFive(serialPort);
 		} catch (SerialPortException e) {
 			System.err.println(e);
 		}
 	}
 
-	private void processByteFive(SerialPort serialPort)
-			throws SerialPortException {
+	private void processByteFive() throws SerialPortException {
 		// byte #5
 		BitSet oxygenBits = readNextByteFrom(serialPort);
 		oxygen = getLongValueFrom(oxygenBits);
 	}
 
-	private void processByteFour(SerialPort serialPort, boolean pulseWaveBit7)
+	private void processByteFour(boolean pulseWaveBit7)
 			throws SerialPortException {
 		// byte #4
 		BitSet pulseRateBits = readNextByteFrom(serialPort);
@@ -50,8 +51,7 @@ public class Package {
 		pulseRate = getLongValueFrom(pulseRateBits);
 	}
 
-	private boolean processByteThree(SerialPort serialPort)
-			throws SerialPortException {
+	private boolean processByteThree() throws SerialPortException {
 		// byte #3
 		BitSet barGraph = readNextByteFrom(serialPort);
 		pulseBar = getLongValueFrom(barGraph, 0, 3);
@@ -63,15 +63,13 @@ public class Package {
 		return pulseWaveBit7;
 	}
 
-	private void processByteTwo(SerialPort serialPort)
-			throws SerialPortException {
+	private void processByteTwo() throws SerialPortException {
 		// byte #2
 		BitSet waveformData = readNextByteFrom(serialPort).get(0, 6);
 		pulseWaveform = getLongValueFrom(waveformData);
 	}
 
-	private void processByteOne(SerialPort serialPort)
-			throws SerialPortException {
+	private void processByteOne() throws SerialPortException {
 		// byte #1
 		BitSet signal = readNextByteFrom(serialPort);
 		signalStrength = getLongValueFrom(signal, 0, 3);
@@ -94,8 +92,15 @@ public class Package {
 
 		return BitSet.valueOf(serialPort.readBytes(1));
 	}
-	
+
 	public String toString() {
-		return String.format("Oxygen: %d Pulse Rate: %d Pulse Waveform: %d Pulse Bar: %d Signal Strength: %d", oxygen, pulseRate, pulseWaveform, pulseBar, signalStrength);
+		return String
+				.format("\tOxygen:\t%d\tPulse Rate:\t%d\tPulse Waveform:\t%d Pulse Bar:\t%d\tSignal Strength:\t%d",
+						oxygen, 
+						pulseRate, 
+						pulseWaveform, 
+						pulseBar,
+						signalStrength
+				);
 	}
 }
