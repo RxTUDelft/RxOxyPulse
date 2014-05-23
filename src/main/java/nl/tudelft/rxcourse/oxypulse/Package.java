@@ -15,11 +15,11 @@ public class Package {
 	private boolean hasBeepFlag;
 	private boolean hasProbeError;
 
-	private long signalStrength;
-	private long pulseWaveform;
-	private long pulseRate;
-	private long pulseBar;
-	private long oxygen;
+	private int signalStrength;
+	private int pulseWaveform;
+	private int pulseRate;
+	private int pulseBar;
+	private int oxygen;
 
 	public Package(SerialPort serialPort) {
 		this.serialPort = serialPort;
@@ -40,7 +40,7 @@ public class Package {
 	private void processByteFive() throws SerialPortException {
 		// byte #5
 		BitSet oxygenBits = readNextByteFrom(serialPort);
-		oxygen = getLongValueFrom(oxygenBits);
+		oxygen = getValueFrom(oxygenBits);
 	}
 
 	private void processByteFour(boolean pulseWaveBit7)
@@ -48,13 +48,13 @@ public class Package {
 		// byte #4
 		BitSet pulseRateBits = readNextByteFrom(serialPort);
 		pulseRateBits.set(7, pulseWaveBit7);
-		pulseRate = getLongValueFrom(pulseRateBits);
+		pulseRate = getValueFrom(pulseRateBits);
 	}
 
 	private boolean processByteThree() throws SerialPortException {
 		// byte #3
 		BitSet barGraph = readNextByteFrom(serialPort);
-		pulseBar = getLongValueFrom(barGraph, 0, 3);
+		pulseBar = getValueFrom(barGraph, 0, 3);
 
 		hasProbeError = barGraph.get(4);
 		isSearching = barGraph.get(5);
@@ -66,25 +66,25 @@ public class Package {
 	private void processByteTwo() throws SerialPortException {
 		// byte #2
 		BitSet waveformData = readNextByteFrom(serialPort).get(0, 6);
-		pulseWaveform = getLongValueFrom(waveformData);
+		pulseWaveform = getValueFrom(waveformData);
 	}
 
 	private void processByteOne() throws SerialPortException {
 		// byte #1
 		BitSet signal = readNextByteFrom(serialPort);
-		signalStrength = getLongValueFrom(signal, 0, 3);
+		signalStrength = getValueFrom(signal, 0, 3);
 		isSearchingTooLong = signal.get(4);
 		isDroppingOffOxygen = signal.get(5);
 		hasBeepFlag = signal.get(6);
 	}
 
-	private long getLongValueFrom(BitSet bits, int from, int to) {
+	private int getValueFrom(BitSet bits, int from, int to) {
 		long[] values = bits.get(from, to).toLongArray();
-		return values.length > 0 ? values[0] : 0;
+		return values.length > 0 ? (int) values[0] : 0;
 	}
 
-	private long getLongValueFrom(BitSet bits) {
-		return getLongValueFrom(bits, 0, bits.length());
+	private int getValueFrom(BitSet bits) {
+		return getValueFrom(bits, 0, bits.length());
 	}
 
 	private BitSet readNextByteFrom(SerialPort serialPort)
